@@ -189,6 +189,7 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
 ---
 
 ## Testing
+#### Here are some [Test cases](test-case.md)
 
 1. **Unit Tests**: Ensure the correct functioning of individual agents (KnowledgeAgent, CustomerSupportAgent, GeneralAgent).
 2. **Integration Tests**: Test the interaction between agents (e.g., RouterAgent routing to the correct agent).
@@ -224,10 +225,4 @@ For further development, consider enhancing the news-fetching capabilities, impr
 
 ---
 
-### Diagrams
-- **Agent Swarm Architecture**: ![Agent Swarm Architecture](./images/agent-swarm-architecture.png)
-
----
-
-**Note**: Make sure all images, such as the diagram, are placed in the `./images/` directory to ensure proper display.
 
