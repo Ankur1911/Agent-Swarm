@@ -189,7 +189,7 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
 ---
 
 ## Testing
-#### Here are some [Test cases](test-case.md)
+#### Here are some [Test cases](test-cases.md)
 
 1. **Unit Tests**: Ensure the correct functioning of individual agents (KnowledgeAgent, CustomerSupportAgent, GeneralAgent).
 2. **Integration Tests**: Test the interaction between agents (e.g., RouterAgent routing to the correct agent).
