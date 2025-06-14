@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f7f6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: white;
+    }
+    .input-field {
+      margin-bottom: 15px;
+      width: 100%;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      padding: 12px 24px;
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    button:disabled {
+      background-color: #ccc;
+    }
+    .response {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      background-color: #e8f4fd;
+      border: 1px solid #0070f3;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap; /* Ensures line breaks in JSON */
+    }
+    .error {
+      margin-top: 20px;
+      color: red;
+      font-size: 14px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 20px;
+      color: #333;
+    }
+    .json-content {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap; /* This allows multi-line text */
+    }
+
+    /* Loader styles */
+    .loader {
+      border: 4px solid #f3f3f3; /* Light gray */
+      border-top: 4px solid #0070f3; /* Blue */
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 2s linear infinite;
+      margin: 0 auto;
+      display: block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 class="title">Ask the Chatbot</h1>
+    <form id="chatForm">
+      <div class="input-field">
+        <label for="user_id">User ID</label>
+        <input type="text" id="user_id" required placeholder="Enter your user ID">
+      </div>
+      <div class="input-field">
+        <label for="message">Message</label>
+        <textarea id="message" required placeholder="Enter your message"></textarea>
+      </div>
+      <button type="submit">Send</button>
+    </form>
+
+    <!-- Loader will be displayed here -->
+    <div id="loader" style="display: none;" class="loader"></div>
+
+    <div id="response" class="response" style="display: none;"></div>
+    <div id="error" class="error" style="display: none;"></div>
+  </div>
+
+  <script>
+    // Handle form submission
+    document.getElementById("chatForm").addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent the default form submission
+
+      // Get the user input values
+      const userId = document.getElementById("user_id").value;
+      const message = document.getElementById("message").value;
+
+      // Check if both fields are filled
+      if (!userId || !message) {
+        showError("Both fields are required!");
+        return;
+      }
+
+      // Show loader
+      document.getElementById("loader").style.display = "block";
+
+      // Prepare the payload to send to the backend API
+      const payload = {
+        user_id: userId,
+        message: message
+      };
+
+      // Make the POST request to the /ask endpoint
+      fetch("http://localhost:8000/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Hide loader
+        document.getElementById("loader").style.display = "none";
+
+        // Display the response from the backend
+        if (data) {
+          displayResponse(data);
+          document.getElementById("error").style.display = "none";
+        }
+      })
+      .catch(error => {
+        // Hide loader
+        document.getElementById("loader").style.display = "none";
+
+        // Display an error message if the request fails
+        showError("Error: Could not reach the server.");
+      });
+    });
+
+    // Function to show error messages
+    function showError(message) {
+      document.getElementById("error").textContent = message;
+      document.getElementById("error").style.display = "block";
+      document.getElementById("response").style.display = "none";
+    }
+
+    // Function to display the response in a formatted manner
+    function displayResponse(data) {
+      const responseElement = document.getElementById("response");
+      
+      const formattedResponse = `
+        <div class="section-title">Response:</div>
+        <div class="json-content">${formatText(data.response)}</div>
+
+        <div class="section-title">Source Agent Response:</div>
+        <div class="json-content">${formatText(data.source_agent_response)}</div>
+
+        <div class="section-title">Agent Workflow:</div>
+        <div class="json-content">${formatText(JSON.stringify(data.agent_workflow, null, 2))}</div>
+      `;
+
+      responseElement.innerHTML = formattedResponse;
+      responseElement.style.display = "block";
+    }
+
+    // Function to format the text, replacing '\n' with <br> for proper line breaks
+    function formatText(text) {
+      return text.replace(/\n/g, "<br>");
+    }
+  </script>
+
+</body>
+</html>

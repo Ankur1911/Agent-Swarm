@@ -1,0 +1,9 @@
+
+# Ignore the .git directory (for Git repositories)
+.git/
+
+# Ignore Dockerfile if not required in container
+Dockerfile
+
+# Ignore virtual environment directories
+myenv/
