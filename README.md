@@ -78,7 +78,7 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
 - **Features**:
   - Integrated with an **FAQ system** that checks the similarity of the query to frequently asked questions.
   - Uses internal **Database Tool** to retrieve user data and respond.
-  - Uses **Email Tool** to notify the support team if necessary.
+  - Uses **Email Tool** to notify the support team if necessary (Redirect mechanism to human).
 
 #### Tools:
 - **Database Tool** to access user data.
@@ -87,7 +87,7 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
 ### 4. **General Agent**
 - **Role**: Handles general-purpose queries, including those unrelated to InfinitePay or customer support.
 - **Features**:
-  - If the query is suspicious or illegal, the agent uses the **Slack notification tool** to alert the team.
+  - If the query is suspicious or illegal, the agent uses the **Slack notification tool** to alert the team (Guardrails for handle undesired questions).
   - If the query relates to news, the agent uses the **News Tool** to fetch relevant articles based on the user's city or topic(From newsdata.io API).
 
 #### Tools:
