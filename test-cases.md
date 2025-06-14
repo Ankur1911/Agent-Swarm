@@ -33,7 +33,8 @@ This document outlines the test cases for unit tests and the full flow of the **
         "Response": "Our support team will contact you soon regarding your question: “I'm not able to login my account.” (user: client788)."
     }
     ```
-- **Image**: [Attach the image of the email received here]
+- **Email Received**:
+  ![Email Received Image](./images/email.png)
 
 #### 2. **Database Tool**
 
@@ -92,7 +93,8 @@ This document outlines the test cases for unit tests and the full flow of the **
         "Response": "Found suspicious activity. Slack notification sent to our team successfully."
     }
     ```
-- **Image**: [Attach the image for Slack notification]
+- **Slack Notification Received**:
+  ![Slack Notification Received Image](./images/slack.png)
 
 #### 2. **News Tool**
 
