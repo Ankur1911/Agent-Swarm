@@ -88,7 +88,7 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
 - **Role**: Handles general-purpose queries, including those unrelated to InfinitePay or customer support.
 - **Features**:
   - If the query is suspicious or illegal, the agent uses the **Slack notification tool** to alert the team.
-  - If the query relates to news, the agent uses the **News Tool** to fetch relevant articles based on the user's city or topic.
+  - If the query relates to news, the agent uses the **News Tool** to fetch relevant articles based on the user's city or topic(From newsdata.io API).
 
 #### Tools:
 - **Slack Notification Tool** for suspicious queries.
