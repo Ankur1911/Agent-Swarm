@@ -5,7 +5,7 @@ This document outlines the test cases for unit tests and the full flow of the **
 ## Table of Contents
 
 1. [Unit Tests](#unit-tests)
-   1. [Customer Support Tool Tests](#customer-support-tool-tests)
+   1. [Customer Support Agent Tests](#customer-support-agent-tests)
    2. [General-Agent Test Cases](#general-agent-test-cases)
    3. [Knowledge Agent Test Cases](#knowledge-agent-test-cases)
 2. [End-to-End Tests](#end-to-end-tests)
@@ -14,7 +14,7 @@ This document outlines the test cases for unit tests and the full flow of the **
 
 ## Unit Tests
 
-### Customer Support Tool Tests
+### Customer Support Agent Tests
 
 #### 1. **Email Tool**
 
@@ -252,6 +252,3 @@ This document outlines the test cases for unit tests and the full flow of the **
 
 ---
 
-This Markdown file includes **unit tests**, **general-agent test cases**, **knowledge-agent test cases**, and **full flow tests**, structured to fit your project needs.
-
-Simply copy and paste this content into the `test-cases.md` file and save it in your GitHub repository. Let me know if you need further modifications!
