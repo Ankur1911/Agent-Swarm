@@ -1,22 +1,11 @@
-import os
 import json
 import requests
-from dotenv import load_dotenv
+from config import get_settings
 from utils.load_prompt import load_prompt_template
 from agents.knowledge_agent import KnowledgeAgent
 from agents.customer_support_agent import SupportAgent
 from agents.general_agent import GeneralAgent
 from agents.personality_layer import PersonalityLayer
-
-load_dotenv()
-
-API_ENDPOINT = os.getenv("API_ENDPOINT")
-API_KEY = os.getenv("API_KEY")
-
-HEADERS = {
-    "Content-Type": "application/json",
-    "api-key": API_KEY
-}
 
 # Init agents
 print("Initializing agents...")
@@ -37,6 +26,7 @@ class RouterAgent:
 
     # Call the LLM to decide which agent to use based on user input
     def decide_agent(self, user_input):
+        cfg = get_settings()
         system_prompt = load_prompt_template(self.agent_prompt_path)
         payload = {
             "messages": [
@@ -45,7 +35,7 @@ class RouterAgent:
             ]
         }
         try:
-            resp = requests.post(API_ENDPOINT, headers=HEADERS, json=payload)
+            resp = requests.post(str(cfg.API_ENDPOINT), headers=cfg.llm_headers(), json=payload)
             resp.raise_for_status()
             response = resp.json()
             agent_name = response["choices"][0]["message"]["content"].strip()

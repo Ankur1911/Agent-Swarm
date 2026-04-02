@@ -1,28 +1,20 @@
-import os
 import json
 import requests
-from dotenv import load_dotenv
 
+from config import feature_disabled_message, get_settings
 from utils.load_prompt import load_prompt_template
 from utils.tools import send_slack_notification, get_news
-load_dotenv()
-
-API_ENDPOINT = os.getenv("API_ENDPOINT")
-API_KEY       = os.getenv("API_KEY")
-SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
-
-HEADERS = {
-    "Content-Type": "application/json",
-    "api-key": API_KEY
-}
 
 TOOLS = [send_slack_notification, get_news]
 
 # Get news tool function to fetch latest news articles based on a topic
 def get_news_tool(topic: str) -> str:
+    cfg = get_settings()
+    if not cfg.news_enabled:
+        return {"tool_name": "get_news_tool", "Response": feature_disabled_message("News lookup")}
     try:
-        url = f"https://newsdata.io/api/1/latest?apikey=pub_2d18ef10b18a49d198e4bb200a7b3e0e&q={topic}"
-        
+        url = f"https://newsdata.io/api/1/latest?apikey={cfg.NEWS_API_KEY}&q={topic}"
+
         response = requests.get(url)
         response.raise_for_status()
 
@@ -43,16 +35,19 @@ def get_news_tool(topic: str) -> str:
     except Exception as e:
         return f"Error retrieving news: {e}"
 
-# Function to send a Slack notification when suspicious activity is detected    
+# Function to send a Slack notification when suspicious activity is detected
 def send_slack_notification_tool(user_id:str, message: str):
-        
+        cfg = get_settings()
+        if not cfg.slack_enabled:
+            return {"tool_name": "slack_notification", "Response": feature_disabled_message("Slack alerting")}
+
         payload = {
             "text": f"🚨 **Suspicious Activity Detected** 🚨 \n\nFrom : {user_id}\n\nMessage:{message}",
             "channel": "#alert"  # Slack channel name
         }
-        
+
         try:
-            response = requests.post(SLACK_WEBHOOK_URL, json=payload)
+            response = requests.post(str(cfg.SLACK_WEBHOOK_URL), json=payload)
             response.raise_for_status()
             return {"tool_name": "slack_notification", "Response": "Found suspecious activity. Slack notification sent to our team successfully."}
         except requests.exceptions.RequestException as e:
@@ -64,13 +59,13 @@ class GeneralAgent:
         self.prompt_template_path = "app/prompts/general_agent_prompt.txt"
 
     def handle(self, user_id: str, question: str) -> str:
-
+        cfg = get_settings()
         system_prompt = load_prompt_template(self.prompt_template_path)
 
         payload = {
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Question: {question} User ID: {user_id}"} 
+                {"role": "user", "content": f"Question: {question} User ID: {user_id}"}
             ],
             "tools" : TOOLS,
             "tool_choice" : "auto"
@@ -78,8 +73,8 @@ class GeneralAgent:
 
         try:
             resp = requests.post(
-                API_ENDPOINT,
-                headers=HEADERS,
+                str(cfg.API_ENDPOINT),
+                headers=cfg.llm_headers(),
                 json=payload
             )
             resp.raise_for_status()

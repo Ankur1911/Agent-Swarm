@@ -1,4 +1,3 @@
-import os
 import json
 import sqlite3
 import requests
@@ -7,23 +6,10 @@ from sentence_transformers import SentenceTransformer, util
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from dotenv import load_dotenv
 
+from config import feature_disabled_message, get_settings
 from utils.load_prompt import load_prompt_template
 from utils.tools import db_query, contact_support
-
-load_dotenv()
-
-# get environment variables for API access
-API_ENDPOINT = os.getenv("API_ENDPOINT")
-API_KEY       = os.getenv("API_KEY")
-
-#get environment variables for email support
-support_email = os.getenv("SUPPORT_EMAIL")
-smtp_server = os.getenv("SMTP_SERVER")  
-smtp_port = os.getenv("SMTP_PORT") 
-sender_email = os.getenv("SENDER_EMAIL")
-sender_password = os.getenv("SENDER_PASSWORD")
 
 # List of FAQs (Dummy data for testing)
 faq_list = [
@@ -81,7 +67,10 @@ def db_query_tool(conn, user_id: str, field: str) -> str:
 
 # contact_support function to send an email to support team
 def contact_support_tool(user_id: str, question: str) -> str:
-     
+    cfg = get_settings()
+    if not cfg.email_enabled:
+        return feature_disabled_message("Support email")
+
     # Create the email content
     subject = f"Support Request from User {user_id}"
     body = f"""
@@ -98,30 +87,25 @@ def contact_support_tool(user_id: str, question: str) -> str:
     
     # Create the MIME message
     message = MIMEMultipart()
-    message["From"] = sender_email
-    message["To"] = support_email
+    message["From"] = cfg.SENDER_EMAIL
+    message["To"] = cfg.SUPPORT_EMAIL
     message["Subject"] = subject
-    
+
     # Attach the body to the email
     message.attach(MIMEText(body, "plain"))
-    
+
     try:
         # Connect to the SMTP server and send the email
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
+        with smtplib.SMTP(cfg.SMTP_SERVER, cfg.SMTP_PORT) as server:
             server.starttls()  # Secure the connection
-            server.login(sender_email, sender_password)  
-            server.sendmail(sender_email, support_email, message.as_string())  # Send the email
+            server.login(cfg.SENDER_EMAIL, cfg.SENDER_PASSWORD)
+            server.sendmail(cfg.SENDER_EMAIL, cfg.SUPPORT_EMAIL, message.as_string())
 
         return f"Our support team will contact you soon regarding your question: “{question}” (user: {user_id})."
-    
+
     except Exception as e:
-        return f"An error occurred while sending the email: {str(e)}"        
+        return f"An error occurred while sending the email: {str(e)}"
 
-
-HEADERS = {
-    "Content-Type": "application/json",
-    "api-key": API_KEY
-}
 
 # Tools definition
 TOOLS = [db_query, contact_support]
@@ -149,6 +133,7 @@ class SupportAgent:
         if matched:
             return {"tool_name":"faq_answer","Response":lookup_faq_answer(matched)}
 
+        cfg = get_settings()
         system_prompt = load_prompt_template(self.prompt_template_path)
 
         # 2. Tool calling via OpenAI API
@@ -163,8 +148,8 @@ class SupportAgent:
 
         try:
             resp = requests.post(
-                API_ENDPOINT,
-                headers=HEADERS,
+                str(cfg.API_ENDPOINT),
+                headers=cfg.llm_headers(),
                 json=payload
             )
             resp.raise_for_status()

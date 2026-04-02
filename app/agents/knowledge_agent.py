@@ -1,4 +1,3 @@
-import os
 import requests
 from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
@@ -6,12 +5,10 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFacePipeline, HuggingFaceEmbeddings
 from transformers import pipeline
 import json
-from dotenv import load_dotenv
 
+from config import get_settings
 from utils.load_prompt import load_prompt_template
 from utils.tools import duckduckgo_tool
-
-load_dotenv()
 
 # Tool Function for DuckDuckGo Search
 def duckduckgo_search_tool(query: str) -> str:
@@ -101,12 +98,9 @@ class KnowledgeAgent:
 
     # Generate a response using the GPT-4 API
     def generate_with_gpt4_api(self, messages, tools=None):
-        api_url = os.getenv("API_ENDPOINT")
-        api_key = os.getenv("API_KEY")
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {api_key}'
-        }
+        cfg = get_settings()
+        api_url = str(cfg.API_ENDPOINT)
+        headers = cfg.llm_headers()
         payload = {
             "model": "gpt-4o-chatgmp",
             "messages": messages,

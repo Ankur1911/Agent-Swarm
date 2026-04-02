@@ -11,11 +11,12 @@
    3. [Customer Support Agent](#3-customer-support-agent)
    4. [General Agent](#4-general-agent)
    5. [Personality Layer](#5-personality-layer)
-4. [How to Run](#how-to-run)
-5. [API Endpoints](#api-endpoints)
-6. [Testing](#testing)
-7. [Dockerization](#dockerization)
-8. [Conclusion](#conclusion)
+4. [Configuration](#configuration)
+5. [How to Run](#how-to-run)
+6. [API Endpoints](#api-endpoints)
+7. [Testing](#testing)
+8. [Dockerization](#dockerization)
+9. [Conclusion](#conclusion)
 
 ---
 
@@ -96,7 +97,81 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
 
 ### 5. **Personality Layer**
 - **Role**: Rewrites responses in a more natural, friendly, and empathetic tone to enhance user experience.
-  
+
+---
+
+## Configuration
+
+All runtime configuration is centralised in [`app/config.py`](app/config.py) using a Pydantic `Settings` model. Values are read from environment variables (and an optional `.env` file in the repo root) and **validated at startup** — if a required value is missing or malformed the process exits immediately with a clear `ConfigurationError` rather than failing later inside an agent.
+
+### Required variables
+
+These must always be set. The app will not boot without them.
+
+| Variable       | Type | Description                                           |
+|----------------|------|-------------------------------------------------------|
+| `API_ENDPOINT` | URL  | Chat‑completions endpoint used by every agent.        |
+| `API_KEY`      | str  | API key / bearer token for the LLM endpoint.          |
+
+### Optional variables (feature‑gated)
+
+These are **not needed for local development**. When unset, the associated feature is disabled gracefully (the agent returns a polite “not configured” message instead of crashing).
+
+| Variable            | Type  | Enables                                           |
+|---------------------|-------|---------------------------------------------------|
+| `SLACK_WEBHOOK_URL` | URL   | Slack alerts for suspicious queries (GeneralAgent)|
+| `NEWS_API_KEY`      | str   | newsdata.io lookups (GeneralAgent)                |
+| `SUPPORT_EMAIL`     | email | Destination for escalated support tickets         |
+| `SMTP_SERVER`       | str   | Outbound SMTP host                                |
+| `SMTP_PORT`         | int   | Outbound SMTP port (1‑65535, e.g. `587`)          |
+| `SENDER_EMAIL`      | email | From‑address for support emails                   |
+| `SENDER_PASSWORD`   | str   | SMTP credential                                   |
+| `ENVIRONMENT`       | str   | `development` (default) or `production`           |
+
+> **SMTP is all‑or‑nothing.** If any of `SUPPORT_EMAIL`, `SMTP_SERVER`, `SMTP_PORT`, `SENDER_EMAIL`, `SENDER_PASSWORD` is set, they must *all* be set — partial configuration raises a validation error at startup.
+
+### Accessing settings in code
+
+Always go through the cached accessor — do **not** read `os.environ` directly or bind a module‑level `settings` global:
+
+```python
+from config import get_settings
+
+def my_tool():
+    cfg = get_settings()          # cached; same instance process‑wide
+    requests.post(str(cfg.API_ENDPOINT), headers=cfg.llm_headers(), ...)
+```
+
+Feature flags derived from config: `cfg.slack_enabled`, `cfg.news_enabled`, `cfg.email_enabled`.
+
+### Example `.env`
+
+Copy [`.env.example`](.env.example) to `.env` and edit:
+
+```env
+# Required
+API_ENDPOINT=https://your-llm-provider.example.com/v1/chat/completions
+API_KEY=sk-your-api-key
+
+# Optional – uncomment in production
+# SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T000/B000/XXXX
+# NEWS_API_KEY=pub_xxxxxxxxxxxxxxxx
+# SUPPORT_EMAIL=support@example.com
+# SMTP_SERVER=smtp.example.com
+# SMTP_PORT=587
+# SENDER_EMAIL=bot@example.com
+# SENDER_PASSWORD=app-specific-password
+```
+
+### Local dev vs production
+
+| Aspect          | Local development                                   | Production                                                 |
+|-----------------|-----------------------------------------------------|------------------------------------------------------------|
+| Source          | `.env` file in repo root                            | Real environment variables (container secrets, CI, etc.)  |
+| Minimum config  | `API_ENDPOINT` + `API_KEY` only                     | All required **and** optional vars you rely on            |
+| SMTP / Slack    | Usually unset — tools return a “not configured” stub | Fully configured; partial SMTP will block startup         |
+| `ENVIRONMENT`   | `development` (default)                             | Set to `production`                                        |
+
 ---
 
 ## How to Run
@@ -123,17 +198,10 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
       ```bash
       pip install -r requirements.txt
       ```
-3. **Create .env file**:
-   Add variables in it.
-   ```
-   API_ENDPOINT
-   API_KEY
-   SLACK_WEBHOOK_URL
-   SUPPORT_EMAIL  
-   SMTP_SERVER 
-   SMTP_PORT 
-   SENDER_EMAIL 
-   SENDER_PASSWORD
+3. **Create a `.env` file** (see [Configuration](#configuration)):
+   ```bash
+   cp .env.example .env
+   # then edit .env and set at least API_ENDPOINT and API_KEY
    ```
 4. **Run the FastAPI application**:
     ```bash
@@ -191,9 +259,13 @@ This process ensures that the **Knowledge Agent** provides accurate and contextu
 ## Testing
 #### Here are some [Test cases](test-cases.md)
 
-1. **Unit Tests**: Ensure the correct functioning of individual agents (KnowledgeAgent, CustomerSupportAgent, GeneralAgent).
-2. **Integration Tests**: Test the interaction between agents (e.g., RouterAgent routing to the correct agent).
-3. **API Tests**: Use tools like **Postman** or **Insomnia** to test the `/ask` endpoint.
+1. **Configuration Tests**: Verify that the settings layer loads valid config, rejects missing required values, and catches malformed inputs (e.g. non‑integer `SMTP_PORT`). Run with:
+    ```bash
+    pytest app/tests/test_config.py -v
+    ```
+2. **Unit Tests**: Ensure the correct functioning of individual agents (KnowledgeAgent, CustomerSupportAgent, GeneralAgent).
+3. **Integration Tests**: Test the interaction between agents (e.g., RouterAgent routing to the correct agent).
+4. **API Tests**: Use tools like **Postman** or **Insomnia** to test the `/ask` endpoint.
 
 ---
 
